@@ -296,7 +296,7 @@ php artisan serve
 
 ### Chairperson Portal
 - **URL:** `http://localhost:8000`
-- **Email:** `violeta.bugtong@bsu-bokod.edu.ph`
+- **Email:** `bugtong@gmail.com`
 - **Password:** `password`
 
 ### Student Portal
