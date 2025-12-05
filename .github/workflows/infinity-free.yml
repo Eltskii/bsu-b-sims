@@ -24,6 +24,6 @@ jobs:
           server: ftpupload.net
           username: if0_40603610
           password: 88AG5yXzB2KZj
-          server-dir: /bsu-b-sims.free.nf/htdocs/  # For addon domains
+          server-dir: /htdocs/  # For addon domains
           timeout: 86400000
           log-level: standard
