@@ -1,4 +1,4 @@
-name: Deploy to InfinityFree
+name: Deploy to bsu-b-sims.free.nf
 
 # Run manually or on push to the main branch
 on:
