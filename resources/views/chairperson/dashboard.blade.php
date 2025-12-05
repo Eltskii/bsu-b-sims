@@ -4,14 +4,23 @@
         <div class="mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Welcome Header -->
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 mb-1">
-                    @php
-                        $hour = date('H');
-                        $greeting = $hour < 12 ? 'Good Morning' : ($hour < 18 ? 'Good Afternoon' : 'Good Evening');
-                    @endphp
-                    {{ $greeting }}, {{ Auth::user()->name }}! 👋
-                </h1>
-                <p class="text-base text-gray-600">Welcome to your grade management dashboard.</p>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-1">
+                            @php
+                                $hour = date('H');
+                                $greeting = $hour < 12 ? 'Good Morning' : ($hour < 18 ? 'Good Afternoon' : 'Good Evening');
+                            @endphp
+                            {{ $greeting }}, {{ Auth::user()->name }}! 👋
+                        </h1>
+                        <p class="text-base text-gray-600">Welcome to your grade management dashboard.</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md px-6 py-3 border-l-4 border-indigo-600">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Your Department</p>
+                        <p class="text-lg font-bold text-gray-900">{{ Auth::user()->department->code }}</p>
+                        <p class="text-sm text-gray-600">{{ Auth::user()->department->name }}</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Statistics Cards -->

@@ -5,16 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\GradeImportBatch;
-use App\Services\GpaCalculationService;
+use App\Services\GwaCalculationService;
 use Illuminate\Http\Request;
 
 class AdminGradeApprovalController extends Controller
 {
-    private GpaCalculationService $gpaService;
+    private GwaCalculationService $gwaService;
 
-    public function __construct(GpaCalculationService $gpaService)
+    public function __construct(GwaCalculationService $gwaService)
     {
-        $this->gpaService = $gpaService;
+        $this->gwaService = $gwaService;
     }
 
     /**
@@ -74,10 +74,18 @@ class AdminGradeApprovalController extends Controller
                 if ($record->enrollment) {
                     $oldGrade = $record->enrollment->grade;
 
+                    // Determine enrollment status based on grade
+                    $status = 'Completed';
+                    if (is_numeric($record->grade)) {
+                        $status = (float)$record->grade >= 4.0 ? 'Failed' : 'Completed';
+                    } elseif (in_array($record->grade, ['IP', 'INC'])) {
+                        $status = 'Enrolled'; // Still in progress
+                    }
+
                     // Update enrollment
                     $record->enrollment->update([
                         'grade' => $record->grade,
-                        'status' => 'Completed',
+                        'status' => $status,
                         'submission_date' => now(),
                         'approver_id' => auth()->id(),
                         'approved_at' => now(),
@@ -93,10 +101,10 @@ class AdminGradeApprovalController extends Controller
                 }
             }
 
-            // Get affected students and calculate GPAs
+            // Get affected students and calculate GWAs
             $enrollmentIds = $matchedRecords->pluck('enrollment_id')->toArray();
-            $students = $this->gpaService->getAffectedStudents($enrollmentIds);
-            $this->gpaService->calculateBatchGpa($students);
+            $students = $this->gwaService->getAffectedStudents($enrollmentIds);
+            $this->gwaService->calculateBatchGwa($students);
 
             // Update batch status
             $batch->update([
@@ -121,7 +129,7 @@ class AdminGradeApprovalController extends Controller
             ]);
 
             return redirect()->route('admin.grade-approvals.show', $batch)
-                ->with('success', 'Batch approved successfully. Grades have been applied and GPAs calculated.');
+                ->with('success', 'Batch approved successfully. Grades have been applied and GWAs calculated.');
         } catch (\Exception $e) {
             return back()->with('error', 'Error approving batch: ' . $e->getMessage());
         }

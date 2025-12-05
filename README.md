@@ -680,8 +680,8 @@ Then access the site at `http://localhost:8080`
 
 ```bash
 # Clone and setup
-git clone https://github.com/Eltskii/bsu-b-sims.git
-cd bsu-sims
+git clone <repository-url> /var/www/bsu-sims
+cd /var/www/bsu-sims
 
 # Install dependencies
 composer install --optimize-autoloader --no-dev

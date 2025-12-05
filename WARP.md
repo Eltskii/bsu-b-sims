@@ -24,6 +24,8 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ### Database Utilities
 - Reseed only specific data (see seeders for details): `php artisan db:seed --class=SampleActivitiesSeeder`
+- Recalculate GWA for all students with grades: `php artisan gwa:recalculate`
+  - For a specific student: `php artisan gwa:recalculate --student_id=2024-0001`
 - Clear optimized caches when changing config/routes/views:
   - `php artisan optimize:clear`
   - `php artisan route:clear`
@@ -165,15 +167,16 @@ All routes are defined in `routes/web.php` and grouped by guard/role:
     - Admins can review a `GradeImportBatch`, then approve or reject it; approvals apply grades to `Enrollment` rows, rejections update batch status and trigger notifications.
   - `AdminGradeModificationController` (`admin/grade-modifications`) allows controlled overrides of individual enrollment grades.
     - Provides index, edit, update, and history views so manual changes are auditable.
-  - `Admin\GradeReportController` (`admin/reports`) uses `GpaCalculationService` and related helpers to:
-    - Generate GPA reports.
+  - `Admin\GradeReportController` (`admin/reports`) uses `GwaCalculationService` and related helpers to:
+    - Generate GWA reports.
     - List irregular students.
-    - Produce dean’s list and grade distribution views for quality assurance.
+    - Produce dean's list and grade distribution views for quality assurance.
 
 - **Chairperson Grade Management (`prefix: chairperson`)**
 
   - `Chairperson\GradeController` (`chairperson/grades`) centralizes subject- and student-centric grade entry UIs.
     - Supports per-student view, per-subject bulk entry, and per-enrollment edit/history.
+    - Automatically recalculates student GWA after grade entry or modification.
   - `Chairperson\GradeImportController` (`chairperson/grade-import`) orchestrates Excel upload and mapping:
     - Uses `GradeImportService` plus `ColumnMapper` and `GradeNormalizer` to auto-detect or accept explicit column mappings (student ID, subject code, grade, etc.).
     - Creates `GradeImportBatch` and `GradeImportRecord` rows with detailed status (`matched` vs `error`) and per-row error messages.
@@ -189,10 +192,16 @@ Most domain rules that cut across multiple controllers live in `app/Services`:
   - Determines academic standing and progression bucket (`promoted_normal`, `promoted_irregular`, `retained`, `probation`) based on failed-subject count and GWA.
   - Persists `academic_standing`, `gwa`, and `is_irregular` on `Student` and writes log entries via `academicStandingLogs` on standing changes.
 
-- **`GpaCalculationService`**
-  - Computes a 4.0-scale GPA for a student in a given or current `AcademicYear`, supporting both Philippine numeric grades and percentage grades.
-  - Derives a high-level standing label (`good`, `probation`, `irregular`) from the computed GPA and updates the `Student` record.
-  - Provides batch GPA calculation and utility for finding all students affected by a set of enrollment IDs (e.g., after grade imports).
+- **`GwaCalculationService`** (formerly `GpaCalculationService`)
+  - Computes GWA (Grade Weighted Average) using Philippine grading scale (1.00-5.00) across all completed enrollments (cumulative by default).
+  - Can calculate for a specific academic year if needed, or cumulative across all years.
+  - Derives academic standing label (`good`, `probation`, `irregular`) based on GWA thresholds (≤1.75 excellent, ≤2.50 good, ≤3.00 probation, >3.00 irregular).
+  - Updates the `Student` record with `gwa`, `academic_standing`, and `is_irregular` fields.
+  - Provides batch GWA calculation and utility for finding all students affected by a set of enrollment IDs (e.g., after grade imports).
+  - Automatically recalculates GWA when:
+    - Admin approves grade import batches
+    - Admin modifies individual grades
+    - Chairperson enters or updates grades (both single and bulk entry)
 
 - **`SemesterTransitionService`**
   - Coordinates with `AcademicStandingService` to prepare and execute bulk promotion/retention based on completed enrollments and grades.

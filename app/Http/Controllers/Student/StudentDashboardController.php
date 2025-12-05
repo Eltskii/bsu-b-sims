@@ -28,15 +28,32 @@ class StudentDashboardController extends Controller
         $allEnrollments = $student->enrollments()
             ->with(['subject', 'academicYear'])
             ->whereIn('status', ['Enrolled', 'Completed', 'Failed'])
-            ->orderBy('academic_year_id', 'desc')
             ->get();
 
-        // Group by semester
-        $enrollmentsBySemester = $allEnrollments->groupBy(function ($enrollment) {
-            if ($enrollment->academicYear) {
-                return $enrollment->academicYear->year_code . ' - ' . $enrollment->academicYear->semester;
-            }
-            return 'No Academic Year';
+        // Sort by academic year code (chronological order) descending
+        $allEnrollments = $allEnrollments->sortByDesc(function ($enrollment) {
+            return $enrollment->academicYear->year_code ?? '';
+        });
+
+        // Group by year level first, then by semester
+        $enrollmentsByYearLevel = $allEnrollments->groupBy(function ($enrollment) {
+            return $enrollment->subject->year_level ?? 'Unknown';
+        });
+
+        // Sort year levels (1st Year, 2nd Year, etc.) in descending order
+        $yearLevelOrder = ['5th Year', '4th Year', '3rd Year', '2nd Year', '1st Year'];
+        $enrollmentsByYearLevel = $enrollmentsByYearLevel->sortBy(function ($items, $yearLevel) use ($yearLevelOrder) {
+            return array_search($yearLevel, $yearLevelOrder);
+        });
+
+        // Within each year level, group by semester
+        $enrollmentsByYearLevel = $enrollmentsByYearLevel->map(function ($yearLevelEnrollments) {
+            return $yearLevelEnrollments->groupBy(function ($enrollment) {
+                if ($enrollment->academicYear) {
+                    return $enrollment->academicYear->year_code . ' - ' . $enrollment->academicYear->semester;
+                }
+                return 'No Academic Year';
+            });
         });
 
         // Get all completed enrollments
@@ -45,19 +62,21 @@ class StudentDashboardController extends Controller
             ->where('status', 'Completed')
             ->get();
 
-        // Calculate overall GPA/GWA
-        $overallGwa = $this->calculateGWA($completedCourses);
-        $overallGpa = $this->calculateGPA($completedCourses);
+        // Use calculated GWA from database (maintained by GwaCalculationService)
+        $overallGwa = $student->gwa;
 
-        // Calculate current semester GPA
+        // Calculate current semester GWA
         $currentSemesterEnrollments = $currentEnrollments->where('status', 'Completed');
         $currentSemesterGwa = $this->calculateGWA($currentSemesterEnrollments);
-        $currentSemesterGpa = $this->calculateGPA($currentSemesterEnrollments);
 
         // Get quick stats
-        $totalUnits = $currentEnrollments->sum('subject.units');
+        $totalUnits = $currentEnrollments->sum(function($enrollment) {
+            return $enrollment->subject->units ?? 0;
+        });
         $enrollmentCount = $currentEnrollments->count();
-        $completedUnits = $completedCourses->sum('subject.units');
+        $completedUnits = $completedCourses->sum(function($enrollment) {
+            return $enrollment->subject->units ?? 0;
+        });
         $enrollmentsWithGrades = $currentEnrollments->whereNotNull('grade')->count();
         $enrollmentsWithoutGrades = $currentEnrollments->whereNull('grade')->count();
 
@@ -73,11 +92,9 @@ class StudentDashboardController extends Controller
             'student',
             'currentEnrollments',
             'completedCourses',
-            'enrollmentsBySemester',
+            'enrollmentsByYearLevel',
             'overallGwa',
-            'overallGpa',
             'currentSemesterGwa',
-            'currentSemesterGpa',
             'totalUnits',
             'completedUnits',
             'enrollmentCount',
@@ -112,49 +129,4 @@ class StudentDashboardController extends Controller
         return round($totalWeightedGrade / $totalUnits, 2);
     }
 
-    private function calculateGPA($enrollments)
-    {
-        if ($enrollments->isEmpty()) {
-            return null;
-        }
-
-        $gradePoints = [
-            '1.0' => 4.0,
-            '1.00' => 4.0,
-            '1.25' => 3.75,
-            '1.5' => 3.5,
-            '1.50' => 3.5,
-            '1.75' => 3.25,
-            '2.0' => 3.0,
-            '2.00' => 3.0,
-            '2.25' => 2.75,
-            '2.5' => 2.5,
-            '2.50' => 2.5,
-            '2.75' => 2.25,
-            '3.0' => 2.0,
-            '3.00' => 2.0,
-            '4.0' => 0.0,
-            '4.00' => 0.0,
-            '5.0' => 0.0,
-            '5.00' => 0.0,
-        ];
-
-        $totalPoints = 0;
-        $totalUnits = 0;
-
-        foreach ($enrollments as $enrollment) {
-            if ($enrollment->grade && isset($gradePoints[(string)$enrollment->grade]) && $enrollment->subject) {
-                $points = $gradePoints[(string)$enrollment->grade];
-                $units = $enrollment->subject->units ?? 0;
-                $totalPoints += $points * $units;
-                $totalUnits += $units;
-            }
-        }
-
-        if ($totalUnits == 0) {
-            return null;
-        }
-
-        return round($totalPoints / $totalUnits, 2);
-    }
 }

@@ -26,7 +26,12 @@ export default {
         'bg-indigo-100', 'bg-indigo-600', 'text-indigo-600', 'text-indigo-700', 'text-indigo-800',
         'hover:bg-indigo-200',
         // Emerald
-        'bg-emerald-500', 'bg-emerald-600', 'text-emerald-100',
+        'bg-emerald-500', 'bg-emerald-600', 'bg-emerald-700', 'text-emerald-100', 'text-emerald-600', 'text-emerald-700',
+        'hover:bg-emerald-500', 'hover:bg-emerald-600', 'hover:bg-emerald-700', 'hover:text-emerald-600',
+        'from-emerald-500', 'from-emerald-600', 'from-emerald-700', 'to-emerald-500', 'to-emerald-600', 'to-emerald-700',
+        'hover:from-emerald-500', 'hover:from-emerald-600', 'hover:to-emerald-500', 'hover:to-emerald-600',
+        'border-emerald-500', 'border-emerald-600', 'border-emerald-700',
+        'focus:ring-emerald-500', 'focus:border-emerald-500',
         // Green (success)
         'bg-green-100', 'border-green-500', 'text-green-700',
         // Red (danger/delete)

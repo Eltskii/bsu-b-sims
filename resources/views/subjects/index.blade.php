@@ -9,13 +9,22 @@
                         <h1 class="text-3xl font-bold text-gray-900">Subjects Management</h1>
                         <p class="mt-1 text-sm text-gray-600">Manage curriculum subjects organized by department and program</p>
                     </div>
-                    <a href="{{ route('subjects.create') }}" 
-                       class="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Add Subject
-                    </a>
+                    <div class="flex gap-3">
+                        <a href="{{ route('subjects.import.form') }}" 
+                           class="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            Import Subjects
+                        </a>
+                        <a href="{{ route('subjects.create') }}" 
+                           class="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Subject
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -80,12 +89,13 @@
                 </div>
 
                 <!-- Archived -->
-                <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border-l-4 border-amber-500">
+                <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border-l-4 border-amber-500 cursor-pointer" onclick="openArchivedModal()">
                     <div class="p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Archived</p>
                                 <p class="text-3xl font-bold text-gray-900 mt-2">{{ $archivedSubjects }}</p>
+                                <p class="text-xs text-amber-600 mt-1">Click to view</p>
                             </div>
                             <div class="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg">
                                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -386,5 +396,109 @@
                 filterSubjects();
             });
         });
+
+        // Archived Modal Functions
+        function openArchivedModal() {
+            document.getElementById('archivedModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeArchivedModal() {
+            document.getElementById('archivedModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
     </script>
+
+    <!-- Archived Subjects Modal -->
+    <div id="archivedModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50" onclick="if(event.target === this) closeArchivedModal()">
+        <div class="relative top-20 mx-auto p-8 border w-11/12 max-w-5xl shadow-2xl rounded-2xl bg-white">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between mb-6 pb-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900">Archived Subjects</h3>
+                        <p class="text-sm text-gray-600">{{ $archivedSubjects }} archived subject(s)</p>
+                    </div>
+                </div>
+                <button onclick="closeArchivedModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="max-h-[600px] overflow-y-auto">
+                @php
+                    $archivedSubjectsList = $subjects->where('is_active', false);
+                @endphp
+
+                @if($archivedSubjectsList->count() > 0)
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 text-gray-700 sticky top-0">
+                                <tr>
+                                    <th class="px-6 py-3 text-left font-semibold">Code</th>
+                                    <th class="px-6 py-3 text-left font-semibold">Subject Name</th>
+                                    <th class="px-6 py-3 text-left font-semibold">Program</th>
+                                    <th class="px-6 py-3 text-left font-semibold">Year Level</th>
+                                    <th class="px-6 py-3 text-left font-semibold">Semester</th>
+                                    <th class="px-6 py-3 text-center font-semibold">Units</th>
+                                    <th class="px-6 py-3 text-center font-semibold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach($archivedSubjectsList as $subject)
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="px-6 py-3 whitespace-nowrap">
+                                            <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded">
+                                                {{ $subject->code }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-3">{{ $subject->name }}</td>
+                                        <td class="px-6 py-3 whitespace-nowrap">{{ $subject->program->code ?? 'N/A' }}</td>
+                                        <td class="px-6 py-3 whitespace-nowrap">{{ $subject->year_level }}</td>
+                                        <td class="px-6 py-3 whitespace-nowrap">{{ $subject->semester }}</td>
+                                        <td class="px-6 py-3 whitespace-nowrap text-center">{{ $subject->units }}</td>
+                                        <td class="px-6 py-3 whitespace-nowrap text-center">
+                                            <form action="{{ route('subjects.destroy', $subject) }}" method="POST" class="inline" onsubmit="return confirm('Restore this subject?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-all shadow-sm hover:shadow-md">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                    </svg>
+                                                    Restore
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                        </svg>
+                        <p class="text-lg font-medium text-gray-600">No archived subjects</p>
+                        <p class="text-sm text-gray-500 mt-1">All subjects are currently active</p>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="mt-6 pt-4 border-t flex justify-end">
+                <button onclick="closeArchivedModal()" class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-all">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

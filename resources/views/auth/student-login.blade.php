@@ -79,7 +79,7 @@
                                 class="block w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400 bg-white" 
                                 placeholder="2024-0001" required autofocus>
                         </div>
-                        <p class="mt-2 text-xs text-gray-500">Format: YYYY-XXXX</p>
+                        <!-- <p class="mt-2 text-xs text-gray-500">Format: YYYY-XXXX</p> -->
                     </div>
 
                     <div class="mb-4">
@@ -111,13 +111,13 @@
                     </button>
                 </form>
 
-                <div class="mt-6 pt-6 border-t border-gray-200">
+                <!-- <div class="mt-6 pt-6 border-t border-gray-200">
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <p class="text-xs text-blue-800 font-medium mb-1">Default Password</p>
                         <p class="text-xs text-blue-700">Your birthdate in MMDDYYYY format</p>
                         <p class="text-xs text-blue-600 mt-1 italic">Example: If born on Jan 15, 2000, use 01152000</p>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <!-- Footer -->

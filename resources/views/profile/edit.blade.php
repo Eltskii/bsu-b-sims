@@ -25,8 +25,8 @@
             <div class="max-w-4xl mx-auto space-y-6">
                 <!-- Profile Information Card -->
                 <div class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100">
-                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-                    <div class="p-8">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"></div>
+                    <div class="relative z-10 p-8">
                         <div class="flex items-start gap-4 mb-6">
                             <div class="relative">
                                 <div class="absolute inset-0 bg-blue-500 rounded-2xl blur-xl opacity-20"></div>
@@ -45,8 +45,8 @@
 
                 <!-- Update Password Card -->
                 <div class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100">
-                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-                    <div class="p-8">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"></div>
+                    <div class="relative z-10 p-8">
                         <div class="flex items-start gap-4 mb-6">
                             <div class="relative">
                                 <div class="absolute inset-0 bg-indigo-500 rounded-2xl blur-xl opacity-20"></div>
@@ -65,8 +65,8 @@
 
                 <!-- Delete Account Card -->
                 <div class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-red-100">
-                    <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-pink-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-                    <div class="p-8">
+                    <div class="absolute inset-0 bg-gradient-to-br from-red-500 to-pink-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"></div>
+                    <div class="relative z-10 p-8">
                         <div class="flex items-start gap-4 mb-6">
                             <div class="relative">
                                 <div class="absolute inset-0 bg-red-500 rounded-2xl blur-xl opacity-20"></div>

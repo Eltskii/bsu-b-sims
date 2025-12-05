@@ -20,7 +20,7 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Quick Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-purple-600">
                     <div class="flex items-center justify-between">
                         <div>
@@ -63,19 +63,6 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-red-600">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Rejected</p>
-                            <h3 class="text-3xl font-bold text-gray-900">{{ $batches->where('status', 'rejected')->count() }}</h3>
-                        </div>
-                        <div class="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-xl">

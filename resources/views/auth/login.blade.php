@@ -141,7 +141,7 @@
                                     class="input-primary block w-full pl-9 pr-3 py-2.5 text-sm" 
                                     placeholder="2024-0001" required>
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">Format: YYYY-XXXX</p>
+                            <!-- <p class="mt-1 text-xs text-gray-500">Format: YYYY-XXXX</p> -->
                         </div>
 
                         <div class="mb-4">
@@ -173,9 +173,9 @@
                         </button>
                     </form>
 
-                    <div class="mt-4 pt-4 border-t border-gray-200 text-center">
+                    <!-- <div class="mt-4 pt-4 border-t border-gray-200 text-center">
                         <p class="text-xs text-gray-500">Default password: birthdate (MMDDYYYY)</p>
-                    </div>
+                    </div> -->
                 </div>
             </div>
 

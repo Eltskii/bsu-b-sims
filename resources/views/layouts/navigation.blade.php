@@ -88,6 +88,9 @@
                         <x-nav-link :href="route('chairperson.grade-batches.index')" :active="request()->routeIs('chairperson.grade-batches.*')">
                             {{ __('My Batches') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('chairperson.reports.index')" :active="request()->routeIs('chairperson.reports.*')">
+                            {{ __('Reports') }}
+                        </x-nav-link>
                     @endif
                 </div>
 
@@ -207,6 +210,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('chairperson.grade-batches.index')" :active="request()->routeIs('chairperson.grade-batches.*')">
                     {{ __('My Batches') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('chairperson.reports.index')" :active="request()->routeIs('chairperson.reports.*')">
+                    {{ __('Reports') }}
                 </x-responsive-nav-link>
             @endif
         </div>

@@ -293,10 +293,22 @@
                 datasets: [{
                     label: 'Number of Students',
                     data: yearLevelData.map(y => y.count),
-                    backgroundColor: '#3b82f6',
-                    borderColor: '#1e40af',
-                    borderWidth: 1,
-                    borderRadius: 6
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',   // Indigo - 1st Year
+                        'rgba(34, 197, 94, 0.8)',    // Green - 2nd Year
+                        'rgba(251, 146, 60, 0.8)',   // Orange - 3rd Year
+                        'rgba(236, 72, 153, 0.8)',   // Pink - 4th Year
+                        'rgba(168, 85, 247, 0.8)'    // Purple - 5th Year (if any)
+                    ],
+                    borderColor: [
+                        'rgba(99, 102, 241, 1)',
+                        'rgba(34, 197, 94, 1)',
+                        'rgba(251, 146, 60, 1)',
+                        'rgba(236, 72, 153, 1)',
+                        'rgba(168, 85, 247, 1)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
                 }]
             },
             options: {

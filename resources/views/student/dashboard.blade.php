@@ -22,9 +22,14 @@
                 </div>
             </div>
             <div class="text-right bg-white/10 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/20">
-                <p class="text-xs text-emerald-200 uppercase tracking-wide font-semibold">Overall GWA</p>
-                <p class="text-4xl font-bold text-white mt-1">{{ $overallGwa ? number_format($overallGwa, 2) : 'N/A' }}</p>
-                <p class="text-xs text-emerald-200 mt-1">GPA: {{ $overallGpa ? number_format($overallGpa, 2) : 'N/A' }}</p>
+                <p class="text-xs text-emerald-200 uppercase tracking-wide font-semibold">Cumulative GWA</p>
+                @if($overallGwa && $overallGwa > 0)
+                    <p class="text-4xl font-bold text-white mt-1">{{ number_format($overallGwa, 2) }}</p>
+                    <p class="text-xs text-emerald-200 mt-1">All Semesters</p>
+                @else
+                    <p class="text-sm text-white/80 italic mt-2">Not yet available</p>
+                    <p class="text-xs text-emerald-200 mt-1">Complete at least one semester</p>
+                @endif
             </div>
         </div>
     </div>
@@ -79,9 +84,9 @@
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-amber-500 hover:shadow-lg transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Semester GWA</p>
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Current Semester</p>
                         <p class="text-3xl font-bold text-gray-900 mt-2">{{ $currentSemesterGwa ? number_format($currentSemesterGwa, 2) : '—' }}</p>
-                        <p class="text-sm text-gray-600 mt-1">Current</p>
+                        <p class="text-sm text-gray-600 mt-1">This Term GWA</p>
                     </div>
                     <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,71 +98,137 @@
         </div>
 
 
-        <!-- Current Enrollments -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="relative overflow-hidden px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #047857, #0f766e, #115e59);">
-                <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white opacity-10"></div>
-                <div class="absolute -left-6 -bottom-6 h-20 w-20 rounded-full bg-white opacity-10"></div>
-                <h3 class="relative z-10 text-lg font-semibold text-white">Current Enrollments</h3>
-                @if($currentYear)
-                <span class="relative z-10 text-sm text-emerald-100 font-medium">{{ $currentYear->year_code }} - {{ $currentYear->semester }}</span>
-                @endif
-            </div>
-            <div class="overflow-x-auto">
-                @if($currentEnrollments->count() > 0)
-                    <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+        <!-- Enrollments by Year Level -->
+        @if($enrollmentsByYearLevel->isNotEmpty())
+            @foreach($enrollmentsByYearLevel as $yearLevel => $semesters)
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8 border-2 border-gray-200">
+                <!-- Year Level Header -->
+                <div class="relative overflow-hidden px-8 py-5" style="background: linear-gradient(135deg, #1e40af, #1e3a8a, #312e81);">
+                    <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white opacity-10"></div>
+                    <div class="absolute -left-10 -bottom-10 h-28 w-28 rounded-full bg-white opacity-10"></div>
+                    <div class="relative z-10 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">{{ $yearLevel }}</h2>
+                            <p class="text-sm text-blue-200 mt-1">Academic Progress</p>
+                        </div>
+                        @php
+                            $totalSubjects = $semesters->flatten()->count();
+                            $completedSubjects = $semesters->flatten()->where('status', 'Completed')->count();
+                        @endphp
+                        <div class="text-right">
+                            <p class="text-3xl font-bold text-white">{{ $totalSubjects }}</p>
+                            <p class="text-sm text-blue-200">{{ Str::plural('Subject', $totalSubjects) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Semesters within this year level -->
+                <div class="p-6 space-y-6">
+                    @foreach($semesters as $semesterLabel => $enrollments)
+                    <div class="bg-white rounded-xl overflow-hidden shadow-md border-2 border-gray-200 hover:border-emerald-400 transition-all duration-200">
+                        <div class="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                <h3 class="text-base font-semibold text-white">{{ $semesterLabel }}</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 bg-white/20 rounded-full text-xs text-white font-medium">{{ $enrollments->count() }} {{ Str::plural('subject', $enrollments->count()) }}</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-gray-50">
+                            <div class="overflow-x-auto">
+                    <table class="w-full bg-white rounded-lg overflow-hidden">
+                        <thead class="bg-gray-100 border-b-2 border-gray-300">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Name</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Units</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($currentEnrollments as $enrollment)
+                            @foreach($enrollments as $enrollment)
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ $enrollment->subject->code }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-700 font-medium">{{ $enrollment->subject->name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700">{{ $enrollment->subject->units }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        @if($enrollment->status === 'Enrolled') bg-blue-100 text-blue-800 
-                                        @elseif($enrollment->status === 'Completed') bg-emerald-100 text-emerald-800 
-                                        @elseif($enrollment->status === 'Failed') bg-red-100 text-red-800 
-                                        @else bg-gray-100 text-gray-800 @endif">
-                                        {{ $enrollment->status }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                     @if($enrollment->grade)
-                                        <span class="px-3 py-1 inline-flex text-sm font-bold rounded-lg
-                                            @if($enrollment->grade <= 1.75) bg-emerald-100 text-emerald-800
-                                            @elseif($enrollment->grade <= 2.5) bg-blue-100 text-blue-800
-                                            @elseif($enrollment->grade < 4.0) bg-amber-100 text-amber-800
-                                            @else bg-red-100 text-red-800
-                                            @endif">
-                                            {{ number_format($enrollment->grade, 2) }}
-                                        </span>
+                                        @if(is_numeric($enrollment->grade))
+                                            <span class="px-3 py-1 inline-flex text-sm font-bold rounded-lg
+                                                @if($enrollment->grade <= 1.75) bg-emerald-100 text-emerald-800
+                                                @elseif($enrollment->grade <= 2.5) bg-blue-100 text-blue-800
+                                                @elseif($enrollment->grade < 4.0) bg-amber-100 text-amber-800
+                                                @else bg-red-100 text-red-800
+                                                @endif">
+                                                {{ number_format($enrollment->grade, 2) }}
+                                            </span>
+                                        @else
+                                            <span class="px-3 py-1 inline-flex text-sm font-bold rounded-lg bg-gray-100 text-gray-800">
+                                                {{ $enrollment->grade }}
+                                            </span>
+                                        @endif
                                     @else
                                         <span class="text-gray-400 text-sm">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-sm">
+                                    @php
+                                        $remark = '';
+                                        if ($enrollment->status === 'Dropped') {
+                                            $remark = 'Dropped';
+                                            $remarkColor = 'text-gray-600';
+                                        } elseif ($enrollment->status === 'Failed' || ($enrollment->grade && is_numeric($enrollment->grade) && $enrollment->grade >= 4.0)) {
+                                            $remark = 'Failed';
+                                            $remarkColor = 'text-red-600 font-semibold';
+                                        } elseif ($enrollment->grade === 'INC') {
+                                            $remark = 'Incomplete';
+                                            $remarkColor = 'text-amber-600 font-semibold';
+                                        } elseif ($enrollment->grade === 'IP') {
+                                            $remark = 'In Progress';
+                                            $remarkColor = 'text-blue-600';
+                                        } elseif ($enrollment->status === 'Completed' && $enrollment->grade && is_numeric($enrollment->grade)) {
+                                            $remark = 'Passed';
+                                            $remarkColor = 'text-emerald-600 font-semibold';
+                                        } elseif ($enrollment->status === 'Enrolled') {
+                                            $remark = 'Ongoing';
+                                            $remarkColor = 'text-blue-600';
+                                        } else {
+                                            $remark = '—';
+                                            $remarkColor = 'text-gray-400';
+                                        }
+                                    @endphp
+                                    <span class="{{ $remarkColor }}">
+                                        {{ $remark }}
+                                    </span>
+                                    @if($enrollment->remarks)
+                                        <span class="text-xs text-gray-500 block mt-1">{{ $enrollment->remarks }}</span>
                                     @endif
                                 </td>
                             </tr>
                             @endforeach
                         </tbody>
                     </table>
-                @else
-                    <div class="text-center py-12">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <p class="mt-2 text-sm font-medium text-gray-500">No current enrollments</p>
+                            </div>
+                        </div>
                     </div>
-                @endif
+                    @endforeach
             </div>
-        </div>
+            @endforeach
+        @else
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="relative overflow-hidden px-6 py-4" style="background: linear-gradient(135deg, #047857, #0f766e, #115e59);">
+                    <h3 class="text-lg font-semibold text-white">Enrollments</h3>
+                </div>
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="mt-2 text-sm font-medium text-gray-500">No enrollments found</p>
+                </div>
+            </div>
+        @endif
 
         <!-- Grade Legend -->
         <div class="bg-white rounded-lg shadow-md p-6">

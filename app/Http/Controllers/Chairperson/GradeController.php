@@ -8,10 +8,17 @@ use App\Models\Enrollment;
 use App\Models\GradeHistory;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Services\GwaCalculationService;
 use Illuminate\Http\Request;
 
 class GradeController extends Controller
 {
+    private GwaCalculationService $gwaService;
+
+    public function __construct(GwaCalculationService $gwaService)
+    {
+        $this->gwaService = $gwaService;
+    }
     /**
      * Display hybrid view with students and subjects tabs
      */
@@ -62,13 +69,22 @@ class GradeController extends Controller
                 $query->where('department_id', $chairperson->department_id);
             })
             ->with(['subject', 'academicYear'])
+            ->orderBy('academic_year_id')
             ->get();
         
         if ($enrollments->isEmpty()) {
             abort(403, 'This student has no enrollments in your department.');
         }
 
-        return view('chairperson.grades.student', compact('student', 'enrollments'));
+        // Group enrollments by semester
+        $enrollmentsBySemester = $enrollments->groupBy(function ($enrollment) {
+            if ($enrollment->academicYear) {
+                return $enrollment->academicYear->year_code . ' - ' . $enrollment->academicYear->semester;
+            }
+            return 'No Academic Year';
+        });
+
+        return view('chairperson.grades.student', compact('student', 'enrollments', 'enrollmentsBySemester'));
     }
     
     /**
@@ -104,11 +120,12 @@ class GradeController extends Controller
         $validated = $request->validate([
             'grades' => 'required|array',
             'grades.*.enrollment_id' => 'required|exists:enrollments,id',
-            'grades.*.grade' => 'nullable|string|in:1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00,5.00,IP,INC',
+            'grades.*.grade' => 'nullable|string|in:1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00,3.25,3.50,3.75,4.00,5.00,IP,INC,DRP',
             'reason' => 'required|string',
         ]);
         
         $updatedCount = 0;
+        $affectedStudents = collect();
         
         foreach ($validated['grades'] as $gradeData) {
             $enrollment = Enrollment::find($gradeData['enrollment_id']);
@@ -126,8 +143,19 @@ class GradeController extends Controller
                 continue;
             }
             
+            // Determine enrollment status based on grade
+            $status = $enrollment->status;
+            if ($newGrade === 'DRP') {
+                $status = 'Dropped';
+            } elseif (is_numeric($newGrade)) {
+                $status = (float)$newGrade >= 4.0 ? 'Failed' : 'Completed';
+            } elseif (in_array($newGrade, ['IP', 'INC'])) {
+                $status = 'Enrolled'; // Still in progress
+            }
+            
             $enrollment->update([
                 'grade' => $newGrade,
+                'status' => $status,
                 'submission_date' => now(),
             ]);
             
@@ -139,7 +167,18 @@ class GradeController extends Controller
                 'reason' => $validated['reason'],
             ]);
             
+            // Track affected student for GWA recalculation
+            $affectedStudents->push($enrollment->student);
+            
             $updatedCount++;
+        }
+        
+        // Recalculate GWA for affected students
+        if ($affectedStudents->isNotEmpty()) {
+            $uniqueStudents = $affectedStudents->unique('id');
+            foreach ($uniqueStudents as $student) {
+                $this->gwaService->updateStudentStanding($student);
+            }
         }
         
         // Log bulk grade update activity
@@ -191,7 +230,7 @@ class GradeController extends Controller
         }
 
         $validated = $request->validate([
-            'grade' => 'required|string|in:1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00,5.00,IP,INC',
+            'grade' => 'required|string|in:1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00,3.25,3.50,3.75,4.00,5.00,IP,INC,DRP',
             'remarks' => 'nullable|string',
             'reason' => 'required|string',
         ]);
@@ -200,9 +239,20 @@ class GradeController extends Controller
         $oldGrade = $enrollment->grade;
         $newGrade = $validated['grade'];
 
+        // Determine enrollment status based on grade
+        $status = $enrollment->status;
+        if ($newGrade === 'DRP') {
+            $status = 'Dropped';
+        } elseif (is_numeric($newGrade)) {
+            $status = (float)$newGrade >= 4.0 ? 'Failed' : 'Completed';
+        } elseif (in_array($newGrade, ['IP', 'INC'])) {
+            $status = 'Enrolled'; // Still in progress
+        }
+
         // Update enrollment
         $enrollment->update([
             'grade' => $newGrade,
+            'status' => $status,
             'remarks' => $validated['remarks'] ?? null,
             'submission_date' => now(),
         ]);
@@ -216,6 +266,9 @@ class GradeController extends Controller
             'reason' => $validated['reason'],
         ]);
 
+        // Recalculate student's GWA
+        $this->gwaService->updateStudentStanding($enrollment->student);
+        
         // Log grade entry/modification activity
         $action = $oldGrade ? 'grade_modified' : 'grade_entered';
         $actionText = $oldGrade ? 'modified' : 'entered';
@@ -236,9 +289,9 @@ class GradeController extends Controller
                 'reason' => $validated['reason'],
             ],
         ]);
-
+        
         return redirect()->route('chairperson.grades.index')
-            ->with('success', 'Grade recorded successfully.');
+            ->with('success', 'Grade recorded successfully. Student GWA updated.');
     }
 
     /**

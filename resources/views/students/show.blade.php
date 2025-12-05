@@ -82,11 +82,13 @@
                                     </div>
                                 </div>
                             </div>
-                            @if($student->gpa || $student->academic_standing)
+                            @if(($student->gwa && $student->gwa > 0) || $student->academic_standing)
                             <div class="text-right">
-                                @if($student->gpa)
-                                <div class="text-white/80 text-sm">GPA</div>
-                                <div class="text-2xl font-bold text-white">{{ number_format($student->gpa, 2) }}</div>
+                                @if($student->gwa && $student->gwa > 0)
+                                <div class="text-white/80 text-sm">GWA</div>
+                                <div class="text-2xl font-bold text-white">{{ number_format($student->gwa, 2) }}</div>
+                                @else
+                                <div class="text-white/60 text-xs italic">No GWA yet</div>
                                 @endif
                                 @if($student->academic_standing)
                                 <div class="mt-2">
@@ -341,12 +343,14 @@
                                         <p class="text-base font-semibold text-gray-900">{{ $student->free_higher_education_benefit }}</p>
                                     </div>
                                     @endif
-                                    @if($student->gpa)
-                                    <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                                        <p class="text-xs font-medium text-indigo-700 uppercase tracking-wider mb-1">GPA</p>
-                                        <p class="text-2xl font-bold text-indigo-900">{{ number_format($student->gpa, 2) }}</p>
+                                    <div class="p-4 @if($student->gwa && $student->gwa > 0) bg-indigo-50 border-indigo-200 @else bg-gray-50 border-gray-200 @endif border rounded-lg">
+                                        <p class="text-xs font-medium @if($student->gwa && $student->gwa > 0) text-indigo-700 @else text-gray-500 @endif uppercase tracking-wider mb-1">GWA (Grade Weighted Average)</p>
+                                        @if($student->gwa && $student->gwa > 0)
+                                            <p class="text-2xl font-bold text-indigo-900">{{ number_format($student->gwa, 2) }}</p>
+                                        @else
+                                            <p class="text-sm text-gray-500 italic">Not yet available - grades pending</p>
+                                        @endif
                                     </div>
-                                    @endif
                                     @if($student->academic_standing)
                                     <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
                                         <p class="text-xs font-medium text-indigo-700 uppercase tracking-wider mb-1">Academic Standing</p>

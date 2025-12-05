@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\Program;
+use App\Models\Department;
 use App\Models\AcademicYear;
 use App\Models\Activity;
+use App\Models\StudentUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class StudentController extends Controller
@@ -19,10 +22,11 @@ class StudentController extends Controller
     public function index(Request $request)
     {
         // Load all students for client-side filtering
-        $students = Student::with('program')->latest()->get();
+        $students = Student::with('program.department')->latest()->get();
         $programs = Program::where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
 
-        return view('students.index', compact('students', 'programs'));
+        return view('students.index', compact('students', 'programs', 'departments'));
     }
 
     /**
@@ -94,21 +98,25 @@ class StudentController extends Controller
 
         $student = Student::create($validated);
 
+        // Auto-create student portal account
+        $defaultPassword = $this->createStudentAccount($student);
+
         // Log student creation
         Activity::create([
             'user_id' => Auth::id(),
             'subject_type' => 'App\\Models\\Student',
             'subject_id' => $student->id,
             'action' => 'created',
-            'description' => "Student {$student->first_name} {$student->last_name} (ID: {$student->student_id}) created",
+            'description' => "Student {$student->first_name} {$student->last_name} (ID: {$student->student_id}) created with portal account",
             'properties' => [
                 'student_id' => $student->student_id,
                 'program_id' => $student->program_id,
+                'portal_email' => $student->email_address ?? $student->student_id . '@student.bsu-bokod.edu.ph',
             ],
         ]);
 
         return redirect()->route('students.index')
-            ->with('success', 'Student added successfully!');
+            ->with('success', 'Student added successfully! Portal account created with default password: ' . $defaultPassword);
     }
 
     /**
@@ -237,19 +245,32 @@ class StudentController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Mark student as dropped/withdrawn.
      */
     public function destroy(Student $student)
     {
-        // Delete photo if exists
-        if ($student->photo_path) {
-            Storage::disk('public')->delete($student->photo_path);
-        }
+        // Store original status
+        $originalStatus = $student->status;
+        
+        // Update status to Dropped
+        $student->update(['status' => 'Dropped']);
 
-        $student->delete();
+        // Log the status change
+        Activity::create([
+            'user_id' => Auth::id(),
+            'subject_type' => 'App\\Models\\Student',
+            'subject_id' => $student->id,
+            'action' => 'status_changed',
+            'description' => "Student {$student->first_name} {$student->last_name} marked as Dropped",
+            'properties' => [
+                'student_id' => $student->student_id,
+                'old_status' => $originalStatus,
+                'new_status' => 'Dropped',
+            ],
+        ]);
 
         return redirect()->route('students.index')
-            ->with('success', 'Student deleted successfully!');
+            ->with('success', 'Student marked as Dropped successfully!');
     }
 
     /**
@@ -297,5 +318,42 @@ class StudentController extends Controller
                 'status' => "Cannot mark {$yearLevel} student as Graduated. Only 4th+ year students can graduate."
             ]);
         }
+    }
+
+    /**
+     * Create student portal account with default password
+     * Returns the generated default password
+     */
+    private function createStudentAccount(Student $student)
+    {
+        // Skip if account already exists
+        if (StudentUser::where('student_id', $student->id)->exists()) {
+            return null;
+        }
+
+        // Generate unique email
+        $baseEmail = $student->email_address ?? $student->student_id . '@student.bsu-bokod.edu.ph';
+        $email = $baseEmail;
+        $counter = 1;
+        
+        // Check for duplicates and append counter if needed
+        while (StudentUser::where('email', $email)->exists()) {
+            $emailParts = explode('@', $baseEmail);
+            $email = $emailParts[0] . $counter . '@' . $emailParts[1];
+            $counter++;
+        }
+
+        // Default password: BSU + last 4 of student ID + birth year
+        $last4 = substr($student->student_id, -4);
+        $birthYear = date('Y', strtotime($student->birthdate));
+        $defaultPassword = "BSU{$last4}{$birthYear}";
+
+        StudentUser::create([
+            'student_id' => $student->id,
+            'email' => $email,
+            'password' => Hash::make($defaultPassword),
+        ]);
+
+        return $defaultPassword;
     }
 }

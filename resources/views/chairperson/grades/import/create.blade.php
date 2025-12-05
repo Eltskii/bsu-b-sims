@@ -13,6 +13,86 @@
 
     <div class="py-8">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+            <!-- Pending Batches Alert -->
+            @if($pendingBatchesCount > 0)
+                <div class="mb-6 bg-amber-50 border-l-4 border-amber-500 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-amber-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm text-amber-800 font-semibold">Import Limit</p>
+                            <p class="text-sm text-amber-700 mt-1">
+                                You have <strong>{{ $pendingBatchesCount }}</strong> pending batch(es). 
+                                You can create up to <strong>{{ 3 - $pendingBatchesCount }}</strong> more before reaching the limit.
+                                <a href="{{ route('chairperson.grade-batches.index') }}" class="underline hover:text-amber-900">View batches</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+            <!-- Download Template Section -->
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-xl mb-8">
+                <div class="p-6 text-gray-900">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 bg-emerald-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Download Pre-filled Template</h3>
+                            <p class="text-sm text-gray-600">Get a CSV template with student names already filled in - just add grades!</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-emerald-50 border-l-4 border-emerald-500 rounded-lg p-4 mb-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-emerald-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div class="text-sm text-emerald-800">
+                                <p class="font-semibold mb-1">Recommended Workflow:</p>
+                                <ol class="list-decimal list-inside space-y-1">
+                                    <li>Select a subject below</li>
+                                    <li>Download the pre-filled template</li>
+                                    <li>Open in Excel and fill in the grades</li>
+                                    <li>Upload the completed file using the form below</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label for="template_subject" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Select Subject
+                            </label>
+                            <select id="template_subject" 
+                                    class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                                    onchange="updateDownloadButton()">
+                                <option value="">-- Choose a subject --</option>
+                                @foreach($subjects as $subject)
+                                    <option value="{{ $subject->id }}">{{ $subject->code }} - {{ $subject->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <button type="button" 
+                                id="downloadTemplateBtn"
+                                disabled
+                                onclick="downloadTemplate()"
+                                class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download Template for Selected Subject
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Form Section -->
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-xl">
                 <div class="p-6 text-gray-900">
                     <!-- Instructions -->
@@ -168,6 +248,26 @@
     </div>
 
     <script>
+    function updateDownloadButton() {
+        const select = document.getElementById('template_subject');
+        const downloadBtn = document.getElementById('downloadTemplateBtn');
+        
+        if (select.value) {
+            downloadBtn.disabled = false;
+        } else {
+            downloadBtn.disabled = true;
+        }
+    }
+    
+    function downloadTemplate() {
+        const select = document.getElementById('template_subject');
+        const subjectId = select.value;
+        
+        if (subjectId) {
+            window.location.href = `{{ route('chairperson.grade-import.download-template', ':subject') }}`.replace(':subject', subjectId);
+        }
+    }
+    
     function updateFileName(input) {
         const submitBtn = document.getElementById('submitBtn');
         const fileName = document.getElementById('fileName');

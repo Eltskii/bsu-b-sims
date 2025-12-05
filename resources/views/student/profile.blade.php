@@ -25,8 +25,8 @@
                 <p class="text-lg text-emerald-100 mt-1">{{ $student->student_id }}</p>
                 <div class="flex items-center gap-4 mt-2">
                     <span class="px-3 py-1 bg-white/20 text-white text-sm font-medium rounded-full">{{ $student->status }}</span>
-                    @if($student->gpa)
-                        <span class="px-3 py-1 bg-white/20 text-white text-sm font-medium rounded-full">GPA: {{ number_format($student->gpa, 2) }}</span>
+                    @if($student->gwa && $student->gwa > 0)
+                        <span class="px-3 py-1 bg-white/20 text-white text-sm font-medium rounded-full">GWA: {{ number_format($student->gwa, 2) }}</span>
                     @endif
                 </div>
             </div>
@@ -202,12 +202,15 @@
                         <p class="text-base font-semibold text-gray-900">{{ $student->section }}</p>
                     </div>
                     @endif
-                    @if($student->attendance_type)
                     <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Attendance Type</label>
-                        <p class="text-base font-semibold text-gray-900">{{ $student->attendance_type }}</p>
+                        @php
+                            $attendanceType = $student->attendance_type ?: ($student->is_irregular ? 'Irregular' : 'Regular');
+                        @endphp
+                        <p class="text-base font-semibold {{ $attendanceType === 'Irregular' ? 'text-amber-600' : 'text-emerald-600' }}">
+                            {{ $attendanceType }}
+                        </p>
                     </div>
-                    @endif
                     @if($student->curriculum_used)
                     <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Curriculum Used</label>
@@ -236,12 +239,14 @@
                         <p class="text-base font-semibold text-gray-900">{{ $student->free_higher_education_benefit }}</p>
                     </div>
                     @endif
-                    @if($student->gpa)
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">GPA</label>
-                        <p class="text-base font-semibold text-indigo-600">{{ number_format($student->gpa, 2) }}</p>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">GWA (Grade Weighted Average)</label>
+                        @if($student->gwa && $student->gwa > 0)
+                            <p class="text-base font-semibold text-indigo-600">{{ number_format($student->gwa, 2) }}</p>
+                        @else
+                            <p class="text-sm text-gray-500 italic">Not yet available - grades pending</p>
+                        @endif
                     </div>
-                    @endif
                     @if($student->academic_standing)
                     <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Academic Standing</label>

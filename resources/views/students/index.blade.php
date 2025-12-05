@@ -34,7 +34,9 @@
                     $totalStudents = $students->count();
                     $activeStudents = $students->where('status', 'Active')->count();
                     $graduatedStudents = $students->where('status', 'Graduated')->count();
-                    $irregularStudents = $students->where('is_irregular', true)->count();
+                    $irregularStudents = $students->filter(function($student) {
+                        return $student->attendance_type === 'irregular' || $student->is_irregular;
+                    })->count();
                 @endphp
                 
                 <!-- Total Students -->
@@ -114,9 +116,9 @@
                     <!-- Search and Filter Section -->
                     <div class="mb-6 space-y-4">
                         <!-- Top Row: Search + Dropdowns -->
-                        <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex gap-3">
                             <!-- Search Bar -->
-                            <div class="relative w-full sm:w-80">
+                            <div class="relative" style="flex: 1 1 auto; min-width: 300px;">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -128,9 +130,18 @@
                                        autocomplete="off">
                             </div>
                             
+                            <!-- College/Department Filter -->
+                            <select id="departmentFilter" 
+                                    class="px-2 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" style="flex: 0 0 auto; max-width: 140px;">
+                                <option value="">All Colleges</option>
+                                @foreach($departments as $department)
+                                    <option value="{{ $department->code }}">{{ $department->code }}</option>
+                                @endforeach
+                            </select>
+                            
                             <!-- Program Filter -->
                             <select id="programFilter" 
-                                    class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[140px]">
+                                    class="px-2 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" style="flex: 0 0 auto; max-width: 130px;">
                                 <option value="">All Programs</option>
                                 @foreach($programs as $program)
                                     <option value="{{ $program->code }}">{{ $program->code }}</option>
@@ -139,7 +150,7 @@
                             
                             <!-- Year Level Filter -->
                             <select id="yearLevelFilter" 
-                                    class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[130px]">
+                                    class="px-2 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" style="flex: 0 0 auto; max-width: 115px;">
                                 <option value="">All Years</option>
                                 <option value="1st Year">1st Year</option>
                                 <option value="2nd Year">2nd Year</option>
@@ -148,7 +159,7 @@
                             </select>
                         </div>
                         
-                        <!-- Bottom Row: Status Tags + Results -->
+                        <!-- Bottom Row: Status Tags + Attendance Type + Results -->
                         <div class="flex flex-wrap items-center gap-3">
                             <span class="text-sm font-medium text-gray-700">Status:</span>
                             <div class="flex flex-wrap gap-2">
@@ -168,6 +179,20 @@
                                     Dropped
                                 </button>
                             </div>
+                            
+                            <span class="text-sm font-medium text-gray-700 ml-4">Type:</span>
+                            <div class="flex flex-wrap gap-2">
+                                <button data-attendance="" class="attendance-tag px-4 py-1.5 text-sm font-medium rounded-lg transition-all border-2 border-gray-200 bg-white text-gray-700 hover:border-gray-300 active">
+                                    All
+                                </button>
+                                <button data-attendance="Regular" class="attendance-tag px-4 py-1.5 text-sm font-medium rounded-lg transition-all border-2 border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300">
+                                    Regular
+                                </button>
+                                <button data-attendance="Irregular" class="attendance-tag px-4 py-1.5 text-sm font-medium rounded-lg transition-all border-2 border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300">
+                                    Irregular
+                                </button>
+                            </div>
+                            
                             <div class="ml-auto text-sm text-gray-600">
                                 <span id="resultCount" class="font-semibold text-indigo-600">{{ $students->count() }}</span> students
                             </div>
@@ -189,7 +214,9 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
                                 @forelse($students as $student)
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150" 
+                                        data-department="{{ $student->program->department->code ?? '' }}"
+                                        data-attendance-type="{{ $student->attendance_type ? ucfirst($student->attendance_type) : ($student->is_irregular ? 'Irregular' : 'Regular') }}">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-medium text-gray-900">{{ $student->student_id }}</div>
                                         </td>
@@ -285,18 +312,20 @@
                                                     </svg>
                                                 </a>
                                                 
-                                                <!-- Delete Button -->
-                                                <form action="{{ route('students.destroy', $student) }}" method="POST" class="inline" onsubmit="return confirm('⚠️ Are you sure you want to delete this student?\n\nThis action cannot be undone and will remove all associated records.');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" 
-                                                            class="inline-flex items-center p-2 text-red-600 hover:text-white hover:bg-red-600 rounded-lg transition-all duration-200 group" 
-                                                            title="Delete Student">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                        </svg>
-                                                    </button>
-                                                </form>
+                                                <!-- Mark as Dropped Button -->
+                                                @if($student->status !== 'Dropped')
+                                                    <form action="{{ route('students.destroy', $student) }}" method="POST" class="inline" onsubmit="return confirm('⚠️ Mark this student as Dropped?\n\nThis will change the student\'s status to Dropped. The record will be preserved and can be reactivated later if needed.');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" 
+                                                                class="inline-flex items-center p-2 text-amber-600 hover:text-white hover:bg-amber-600 rounded-lg transition-all duration-200 group" 
+                                                                title="Mark as Dropped/Withdrawn">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"></path>
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -337,72 +366,103 @@
     </div>
     
     <style>
-        .status-tag.active {
+        .status-tag.active,
+        .attendance-tag.active {
             box-shadow: 0 0 0 2px currentColor;
             font-weight: 600;
         }
     </style>
     
     <script>
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', function() {
         let currentStatusFilter = '';
+        let currentAttendanceFilter = '';
         
         function filterTable() {
-            const searchTerm = $('#searchInput').val().toLowerCase();
-            const programFilter = $('#programFilter').val().toLowerCase();
-            const yearLevelFilter = $('#yearLevelFilter').val().toLowerCase();
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const departmentFilter = document.getElementById('departmentFilter').value.toLowerCase();
+            const programFilter = document.getElementById('programFilter').value.toLowerCase();
+            const yearLevelFilter = document.getElementById('yearLevelFilter').value.toLowerCase();
             let visibleCount = 0;
             
-            $('tbody tr').each(function() {
-                const row = $(this);
-                
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(function(row) {
                 // Skip the "no students found" row
-                if (row.find('td').attr('colspan')) {
+                const firstCell = row.querySelector('td');
+                if (firstCell && firstCell.getAttribute('colspan')) {
                     return;
                 }
                 
-                const studentId = row.find('td:eq(0)').text().toLowerCase();
-                const studentName = row.find('td:eq(1)').text().toLowerCase();
-                const program = row.find('td:eq(2)').text().toLowerCase();
-                const yearLevel = row.find('td:eq(3)').text().toLowerCase();
-                const status = row.find('td:eq(4)').text().toLowerCase();
+                const cells = row.querySelectorAll('td');
+                if (cells.length < 5) return;
+                
+                const studentId = cells[0].textContent.toLowerCase();
+                const studentName = cells[1].textContent.toLowerCase();
+                const program = cells[2].textContent.toLowerCase();
+                const yearLevel = cells[3].textContent.toLowerCase();
+                const status = cells[4].textContent.toLowerCase();
+                const department = (row.getAttribute('data-department') || '').toLowerCase();
+                const attendanceType = (row.getAttribute('data-attendance-type') || '').toLowerCase();
                 
                 const matchesSearch = searchTerm === '' || 
                                     studentId.includes(searchTerm) || 
                                     studentName.includes(searchTerm);
+                const matchesDepartment = departmentFilter === '' || department.includes(departmentFilter);
                 const matchesProgram = programFilter === '' || program.includes(programFilter);
-                const matchesYearLevel = yearLevelFilter === '' || yearLevel === yearLevelFilter.toLowerCase();
+                const matchesYearLevel = yearLevelFilter === '' || yearLevel.includes(yearLevelFilter.toLowerCase());
                 const matchesStatus = currentStatusFilter === '' || status.includes(currentStatusFilter.toLowerCase());
+                const matchesAttendance = currentAttendanceFilter === '' || attendanceType.includes(currentAttendanceFilter.toLowerCase());
                 
-                if (matchesSearch && matchesProgram && matchesYearLevel && matchesStatus) {
-                    row.show();
+                if (matchesSearch && matchesDepartment && matchesProgram && matchesYearLevel && matchesStatus && matchesAttendance) {
+                    row.style.display = '';
                     visibleCount++;
                 } else {
-                    row.hide();
+                    row.style.display = 'none';
                 }
             });
             
-            $('#resultCount').text(visibleCount);
+            document.getElementById('resultCount').textContent = visibleCount;
         }
         
         // Status tag filtering
-        $('.status-tag').on('click', function() {
-            // Remove active class from all tags
-            $('.status-tag').removeClass('active');
-            
-            // Add active class to clicked tag
-            $(this).addClass('active');
-            
-            // Get the status from data attribute
-            currentStatusFilter = $(this).data('status');
-            
-            // Trigger filter
-            filterTable();
+        document.querySelectorAll('.status-tag').forEach(function(tag) {
+            tag.addEventListener('click', function() {
+                // Remove active class from all status tags
+                document.querySelectorAll('.status-tag').forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked tag
+                this.classList.add('active');
+                
+                // Get the status from data attribute
+                currentStatusFilter = this.getAttribute('data-status');
+                
+                // Trigger filter
+                filterTable();
+            });
+        });
+        
+        // Attendance type tag filtering
+        document.querySelectorAll('.attendance-tag').forEach(function(tag) {
+            tag.addEventListener('click', function() {
+                // Remove active class from all attendance tags
+                document.querySelectorAll('.attendance-tag').forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked tag
+                this.classList.add('active');
+                
+                // Get the attendance type from data attribute
+                currentAttendanceFilter = this.getAttribute('data-attendance');
+                
+                // Trigger filter
+                filterTable();
+            });
         });
         
         // Trigger filter on input/change
-        $('#searchInput').on('keyup', filterTable);
-        $('#programFilter, #yearLevelFilter').on('change', filterTable);
+        document.getElementById('searchInput').addEventListener('keyup', filterTable);
+        document.getElementById('departmentFilter').addEventListener('change', filterTable);
+        document.getElementById('programFilter').addEventListener('change', filterTable);
+        document.getElementById('yearLevelFilter').addEventListener('change', filterTable);
     });
     </script>
 </x-app-layout>
